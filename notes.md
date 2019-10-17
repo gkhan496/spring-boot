@@ -247,7 +247,313 @@ implements org.springframework.context.ApplicationListener<WebServerInitializedE
 An ApplicationListener that saves embedded server port and management port into file. This application listener will be triggered whenever the server starts, and the file name can be overridden at runtime with a System property or environment variable named "PORTFILE" or "portfile".
 
 -----------------------------------------------
+Interface BiFunction<T,U,R>
+
+Functional Interface:
+
+This is a functional interface and can therefore be used as the assignment target for a lambda expression or method reference.
 
 -----------------------------------------------
 
+org.springframework.util.StringUtils
+
+
+This class delivers some simple functionality that should really be provided by the core Java String and StringBuilder classes. It also provides easy-to-use methods to convert between delimited strings, such as CSV strings, and collections and arrays.
+
+
+-----------------------------------------------
+
+Interface BeforeTestExecutionCallback (org.junit.jupiter.api.extension)
+
+BeforeTestExecutionCallback defines the API for Extensions that wish to provide additional behavior to tests immediately before each test is executed.
+
+
+Callback that is invoked immediately before each test is executed.
+
+beforeTestExecution
+void beforeTestExecution(ExtensionContext context)
+                  throws Exception
+
+-----------------------------------------------
+Junit 5 Extensions
+
+As the name suggests, the purpose of Junit 5 extensions is to extend the behavior of test classes or methods, and these can be reused for multiple tests.
+
+-----------------------------------------------
+
+public File getParentFile()
+
+Returns the abstract pathname of this abstract pathname's parent, or null if this pathname does not name a parent directory.
+
+-----------------------------------------------
+
+public boolean mkdirs()
+Creates the directory named by this abstract pathname, including any necessary but nonexistent parent directories. Note that if this operation fails it may have succeeded in creating some of the necessary parent directories.
+
+Returns:
+true if and only if the directory was created, along with all necessary parent directories; false otherwise
+
+-----------------------------------------------
+
+org.springframework.util.FileSystemUtils
+
+Utility methods for working with the file system.
+
+static void	copyRecursively(File src, File dest)
+Recursively copy the contents of the src file/directory to the dest file/directory.
+
+static void	copyRecursively(Path src, Path dest)
+Recursively copy the contents of the src file/directory to the dest file/directory.
+
+static boolean	deleteRecursively(File root)
+Delete the supplied File - for directories, recursively delete any nested directories or files as well.
+
+static boolean	deleteRecursively(Path root)
+Delete the supplied File - for directories, recursively delete any nested directories or files as well.
+
+Methods inherited from class java.lang.Object
+clone, equals, finalize, getClass, hashCode, notify, notifyAll, toString, wait, wait, wait
+
+-----------------------------------------------
+
+@ParameterizedTest is used to signal that the annotated method is a parameterized test method.
+@ParameterizedTest methods must not be private or static.
+
+@MethodSource is an ArgumentsSource which provides access to values returned by methods of the class in which this annotation is declared.
+
+By default such methods must be static unless the test class is annotated with @TestInstance(Lifecycle.PER_CLASS).
+
+The values returned by such methods will be provided as arguments to the annotated @ParameterizedTest method.
+
+
+
+-----------------------------------------------
+
+https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/File.html
+
+getParentFile()	
+
+Returns the abstract pathname of this abstract pathname's parent, or null if this pathname does not name a parent directory.
+
+-----------------------------------------------
+File location = new File(this.testClass.getProtectionDomain().getCodeSource().getLocation().toURI());
+
+public ProtectionDomain getProtectionDomain()
+
+Returns the ProtectionDomain of this class. If there is a security manager installed, this method first calls the security manager's checkPermission method with a RuntimePermission("getProtectionDomain") permission to ensure it's ok to get the ProtectionDomain.
+
+
+public final CodeSource getCodeSource()
+Returns the CodeSource of this domain.
+
+public final URL getLocation()
+Returns the location associated with this CodeSource.
+
+public URI toURI() throws URISyntaxException
+Returns a URI equivalent to this URL. This method functions in the same way as new URI (this.toString()).
+Note, any URL instance that complies with RFC 2396 can be converted to a URI. However, some URLs that are not strictly in compliance can not be converted to a URI.
+
+-----------------------------------------------
+
+Spring boot - Docker 
+
+DockerClient docker = createClient();
+String imageId = buildImage(os, version, docker);
+String container = createContainer(docker, imageId, script);
+docker.startContainerCmd(container).exec();
+
+
+Here, we apply to the DockerClientBuilder class to create a connection by accepting the default settings:
+DockerClient dockerClient = DockerClientBuilder.getInstance().build();
+Properties properties = new Properties();
+properties.setProperty("registry.email", "info@baeldung.com");
+properties.setProperty("registry.password", "baeldung");
+properties.setProperty("registry.username", "baaldung");
+properties.setProperty("DOCKER_CERT_PATH", "/home/baeldung/.docker/certs");
+properties.setProperty("DOCKER_CONFIG", "/home/baeldung/.docker/");
+properties.setProperty("DOCKER_TLS_VERIFY", "1");
+properties.setProperty("DOCKER_HOST", "tcp://docker.baeldung.com:2376");
+DefaultDockerClientConfig config
+  = DefaultDockerClientConfig.createDefaultConfigBuilder()
+    .withProperties(properties).build();
+DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
+
+
+Now that we have an established connection, we can list all the running containers located on the Docker host:
+List<Container> containers = dockerClient.listContainersCmd()
+  .withShowSize(true)
+  .withShowAll(true)
+  .withStatusFilter("exited").exec()
+
+
+It's an equivalent of:
+$ docker ps -a -s -f status=exited
+# or 
+$ docker container ls -a -s -f status=exited
+
+Container 
+----
+Creating a container is served with the createContainerCmd method. We can declare more complex declaration using the available methods starting with the “with” prefix.
+Let's assume that we have a docker create command defining a host-dependent MongoDB container listening internally on port 27017:
+CreateContainerResponse container
+  = dockerClient.createContainerCmd("mongo:3.6")
+    .withCmd("--bind_ip_all")
+    .withName("mongo")
+    .withHostName("baeldung")
+    .withEnv("MONGO_LATEST_VERSION=3.6")
+    .withPortBindings(PortBinding.parse("9999:27017"))
+    .withBinds(Bind.parse("/Users/baeldung/mongo/data/db:/data/db")).exec();
+
+dockerClient.startContainerCmd(container.getId()).exec();
+dockerClient.stopContainerCmd(container.getId()).exec();
+dockerClient.killContainerCmd(container.getId()).exec();
+
+Image
+----
+String snapshotId = dockerClient.commitCmd("3464bb547f88")
+  .withAuthor("Baeldung <info@baeldung.com>")
+  .withEnv("SNAPSHOT_YEAR=2018")
+  .withMessage("add git support")
+  .withCmd("git", "version")
+  .withRepository("alpine")
+  .withTag("3.6.git").exec();
+
+$ docker image ls alpine --format "table {{.Repository}} {{.Tag}}"
+REPOSITORY TAG
+alpine     3.6.git
+
+List<Image> images = dockerClient.listImagesCmd().exec();
+$ docker image ls --format "table {{.Repository}} {{.Tag}}"
+
+DOCKERFILE 
+
+FROM alpine:3.6
+RUN apk --update add git openssh && \
+  rm -rf /var/lib/apt/lists/* && \
+  rm /var/cache/apk/*
+ENTRYPOINT ["git"]
+CMD ["--help"]
+
+String imageId = dockerClient.buildImageCmd()
+  .withDockerfile(new File("path/to/Dockerfile"))
+  .withPull(true)
+  .withNoCache(true)
+  .withTag("alpine:git")
+  .exec(new BuildImageResultCallback())
+  .awaitImageId();
+
+Push
+
+dockerClient.pushImageCmd("baeldung/alpine")
+  .withTag("git")
+  .exec(new PushImageResultCallback())
+  .awaitCompletion(90, TimeUnit.SECONDS);
+
+Pull
+
+dockerClient.pullImageCmd("baeldung/alpine")
+  .withTag("git")
+  .exec(new PullImageResultCallback())
+  .awaitCompletion(30, TimeUnit.SECONDS);
+
+dockerClient.removeImageCmd("beaccc8687ae").exec();
+List<SearchItem> items = dockerClient.searchImagesCmd("Java").exec();
+
+
+Docker Volumes
+
+Volumes are easier to back up or migrate than bind mounts.
+You can manage volumes using Docker CLI commands or the Docker API.
+Volumes work on both Linux and Windows containers.
+Volumes can be more safely shared among multiple containers.
+Volume drivers let you store volumes on remote hosts or cloud providers, to encrypt the contents of volumes, or to add other functionality.
+New volumes can have their content pre-populated by a container.
+
+List volumes 
+ListVolumesResponse volumesResponse = dockerClient.listVolumesCmd().exec();
+List<InspectVolumeResponse> volumes = volumesResponse.getVolumes();
+
+InspectVolumeResponse volume 
+  = dockerClient.inspectVolumeCmd("0220b87330af5").exec();
+
+CreateVolumeResponse namedVolume 
+  = dockerClient.createVolumeCmd().withName("myNamedVolume").exec();
+
+dockerClient.removeVolumeCmd("myNamedVolume").exec();
+
+Network Management 
+
+List<Network> networks = dockerClient.listNetworksCmd().exec();
+
+CreateNetworkResponse networkResponse = dockerClient.createNetworkCmd()
+  .withName("baeldung")
+  .withIpam(new Ipam()
+    .withConfig(new Config()
+    .withSubnet("172.36.0.0/16")
+    .withIpRange("172.36.5.0/24")))
+  .withDriver("bridge").exec();
+
+$ docker network create \
+  --subnet=172.36.0.0/16 \
+  --ip-range=172.36.5.0/24\
+  baeldung
+
+dockerClient.removeNetworkCmd("baeldung").exec();
+
+-----------------------------------------------
+
+Awaitility — a library which provides a simple domain-specific language (DSL) for asynchronous systems testing.
+
+With Awaitility, we can express our expectations from the system in an easy-to-read DSL.
+
+DSL
+----
+A domain specific language is a language that's written to deal with a specific domain or set of concerns. There are a lot of them around, like make, ant, and rake for describing software builds, or lexx and yacc for language construction. In recent years, they've become popular as some things have combined to make them easier to build. Big among those things has been the increasing popularity of Ruby, which has several features that make it easy to build new DSLs.
+
+    DSLs are very common in computing: examples include CSS, regular expressions, make, rake, ant, SQL, HQL, many bits of Rails, expectations in JMock, graphviz's dot language, FIT, strut's configuration file....
+
+-----------------------------------------------
+
+jmustache : Zero dependencies. You can include this single tiny library in your project and start making use of templates. +++
+
+proguard - jarjar
+
+https://github.com/spullara/mustache.java +++
+
+-----------------------------------------------
+
+List<String> arrlist = new ArrayList<String>(); 
+
+arrlist.add("Ram"); 
+arrlist.add("Gopal"); 
+arrlist.add("Verma"); 
+Enumeration<String> e = Collections.enumeration(arrlist); 
+System.out.println("\nEnumeration over list: "); 
+while (e.hasMoreElements()) 
+System.out.println("Value is: " + e.nextElement()); 
+
+-----------------------------------------------
+
+Undertow is a flexible performant web server written in java, providing both blocking and non-blocking API’s based on NIO.
+
+-----------------------------------------------
+
+http://tutorials.jenkov.com/java-nio/index.html
+
+Working with non-blocking I/O
+
+Using non-blocking I/O in the right situation will improve throughput, latency, and/or responsiveness of your application. It also allows you to work with a single thread, potentially getting rid of synchronization between threads and all the problems associated with it. Node.js is single-threaded, yet can handle millions of connections with a couple of GB RAM without problems.
+
+
+-----------------------------------------------
+-----------------------------------------------
+-----------------------------------------------
+-----------------------------------------------
+-----------------------------------------------
+-----------------------------------------------
+-----------------------------------------------
+-----------------------------------------------
+-----------------------------------------------
+-----------------------------------------------
+-----------------------------------------------
 -----------------------------------------------
