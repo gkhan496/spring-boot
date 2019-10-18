@@ -544,16 +544,224 @@ Working with non-blocking I/O
 
 Using non-blocking I/O in the right situation will improve throughput, latency, and/or responsiveness of your application. It also allows you to work with a single thread, potentially getting rid of synchronization between threads and all the problems associated with it. Node.js is single-threaded, yet can handle millions of connections with a couple of GB RAM without problems.
 
+-----------------------------------------------
+
+Apache ActiveMQ™ is the most popular open source, multi-protocol, Java-based messaging server. It supports industry standard protocols so users get the benefits of client choices across a broad range of languages and platforms.
+
+-----------------------------------------------
+
+CapturedOutput
+
+Provides access to System.out and System.err output that has been captured by the OutputCaptureExtension. Can be used to apply assertions either using AssertJ or standard JUnit assertions. For example:
+ assertThat(output).contains("started"); // Checks all output
+ assertThat(output.getErr()).contains("failed"); // Only checks System.err
+ assertThat(output.getOut()).contains("ok"); // Only checks System.put
+
+-----------------------------------------------
+
+Spring Boot provides two interfaces, CommandLineRunner and ApplicationRunner, to run specific pieces of code when an application is fully started. These interfaces get called just before run() once SpringApplication completes.
+
+-----------------------------------------------
+CommandLineRunner(+) and ApplicationRunner
+
+When you want to execute some piece of code exactly before the application startup completes, you can use it then. In one of our projects, we used these to source data from other microservices via service discovery, which was registered in Consul.
+
+
+-----------------------------------------------
+import org.springframework.stereotype.Component;
+@Component
+
+Indicates that an annotated class is a "component". Such classes are considered as candidates for auto-detection when using annotation-based configuration and classpath scanning.
+
+Other class-level annotations may be considered as identifying a component as well, typically a special kind of component: e.g. the @Repository annotation or AspectJ's @Aspect annotation.
+
+
+
+-----------------------------------------------
+
+JmsTemplate 
+
+JmsTemplate class handles the creation and releasing of resources when sending or synchronously receiving messages.
+
+In order to connect and be able to send/receive messages, we need to configure a ConnectionFactory.
+
+SingleConnectionFactory – is an implementation of ConnectionFactory interface, that will return the same connection on all createConnection() calls and ignore calls to close()
+
+CachingConnectionFactory – extends the functionality of the SingleConnectionFactory and adds enhances it with a caching of Sessions, MessageProducers, and MessageConsumers
+
+The SimpleMessageConverter is able to handle TextMessages, BytesMessages, MapMessages, and ObjectMessages. This class implements the MessageConverter interface.
+
+MessageConventer 
+
+Moreover, we can create custom message conversion functionality simply by implementing the MessageConverter interface's toMessage() and FromMessage() methods.
+
+implements MessageConverter  : fromMessage(Message) - toMessage(Object,Session)
+
+public class SampleJmsMessageSender {
+ 
+    private JmsTemplate jmsTemplate;
+    private Queue queue;
+ 
+    // setters for jmsTemplate & queue
+ 
+    public void simpleSend() {
+        jmsTemplate.send(queue, s -> s.createTextMessage("hello queue world"));
+    }
+
+    public void sendMessage(Employee employee) { 
+        System.out.println("Jms Message Sender : " + employee); 
+        Map<String, Object> map = new HashMap<>(); 
+        map.put("name", employee.getName()); map.put("age", employee.getAge()); 
+        jmsTemplate.convertAndSend(map); 
+    }
+}
+
+Basic configuration with java annotations 
+@JmsListener(destination = "myDestination")
+@SendTo("outbound.topic")
+public void SampleJmsListenerMethod(Message<Order> order) { ... }
+
+
+@Configuration
+@EnableJms
+public class AppConfig {
+ 
+    @Bean
+    public DefaultJmsListenerContainerFactory jmsListenerContainerFactory() {
+        DefaultJmsListenerContainerFactory factory 
+          = new DefaultJmsListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory());
+        return factory;
+    }
+}
+
+Error handler : 
+
+@Service
+public class SampleJmsErrorHandler implements ErrorHandler
+
+-----------------------------------------------
+
+In essence, Actuator brings production-ready features to our application.
+
+Monitoring our app, gathering metrics, understanding traffic or the state of our database becomes trivial with this dependency.
+
+-----------------------------------------------
+InfoContributor - import org.springframework.boot.actuate.info.InfoContributor; / /info endpoint.
+
+Now let's go one step further and expose some useful data from the persistence storage.
+
+To achieve this, we need to implement InfoContributor interface and override the contribute() method:
+
+@Component
+public class TotalUsersInfoContributor implements InfoContributor {
+ 
+    @Autowired
+    UserRepository userRepository;
+ 
+    @Override
+    public void contribute(Info.Builder builder) {
+        Map<String, Integer> userDetails = new HashMap<>();
+        userDetails.put("active", userRepository.countByStatus(1));
+        userDetails.put("inactive", userRepository.countByStatus(0));
+ 
+        builder.withDetail("users", userDetails);
+    }
+}
+
+This approach provides us a lot of flexibility regarding what we can expose to our /info endpoint:
+
+{
+  ...other /info data...,
+  ...
+  "users": {
+    "inactive": 2,
+    "active": 3
+  }
+}
+-----------------------------------------------
+
+Besides using the existing endpoints provided by Spring Boot, we could also create an entirely new one.
+Firstly, we'd need to have the new endpoint implement the Endpoint<T> interface:
+
+-----------------------------------------------
+
+Src: https://www.baeldung.com/spring-boot-actuators
+
+Enable All Endpoints
+
+management.endpoint.shutdown.enabled=true
+-----------------------------------------------
+org.springframework.boot.actuate.endpoint.annotation
+
+public @interface Endpoint
+
+Identifies a type as being an actuator endpoint that provides information about the running application. Endpoints can be exposed over a variety of technologies including JMX and HTTP.
+
+Most @Endpoint classes will declare one or more @ReadOperation, @WriteOperation, @DeleteOperation annotated methods which will be automatically adapted to the exposing technology (JMX, Spring MVC, Spring WebFlux, Jersey etc.).
+-----------------------------------------------
+import org.springframework.boot.actuate.autoconfigure.web.server.LocalManagementPort;
+
+Annotation at the field or method/constructor parameter level that injects the HTTP management port that got allocated at runtime. Provides a convenient alternative for @Value("${local.management.port}").
+
+-----------------------------------------------
+WebSecurityConfigurerAdapter  - 
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http.authorizeRequests((requests) -> {
+			requests.mvcMatchers("/actuator/beans").hasRole("BEANS");
+			requests.requestMatchers(EndpointRequest.to("health", "info")).permitAll();
+			requests.requestMatchers(EndpointRequest.toAnyEndpoint().excluding(MappingsEndpoint.class))
+					.hasRole("ACTUATOR");
+			requests.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll();
+			requests.antMatchers("/foo").permitAll();
+			requests.antMatchers("/**").hasRole("USER");
+		});
+		http.cors(Customizer.withDefaults());
+		http.httpBasic();
+	}
+-----------------------------------------------
+
+-----------------------------------------------
+
+-----------------------------------------------
 
 -----------------------------------------------
 -----------------------------------------------
+
+-----------------------------------------------
+
+-----------------------------------------------
+
+-----------------------------------------------
+
 -----------------------------------------------
 -----------------------------------------------
+
+-----------------------------------------------
+
+-----------------------------------------------
+
+-----------------------------------------------
+
 -----------------------------------------------
 -----------------------------------------------
+
+-----------------------------------------------
+
+-----------------------------------------------
+
+-----------------------------------------------
+
 -----------------------------------------------
 -----------------------------------------------
+
 -----------------------------------------------
+
 -----------------------------------------------
+
 -----------------------------------------------
+
 -----------------------------------------------
